@@ -1,0 +1,34 @@
+---
+- name: Setup 1GB partition on /dev/nvme1n1 and mount it at /extdrive
+  hosts: all
+  become: yes
+  vars:
+    # Partition name (second disk) and partition size
+    device: /dev/nvme1n1
+    mount_point: /extdrive
+    partition_size: 1GB
+    filesystem_type: xfs
+    group_name: IT
+  tasks:
+    - name: Use the rhel_system_roles.storage role to create and mount partition
+      include_role:
+        name: redhat.rhel_system_roles.storage
+      vars:
+        storage:
+          devices:
+            - name: "{{ device }}"
+              partitions:
+                - size: "{{ partition_size }}"
+                  filesystem: "{{ filesystem_type }}"
+                  mount:
+                    name: "{{ mount_point }}"
+                    fstype: "{{ filesystem_type }}"
+                    opts: defaults
+                    state: mounted
+
+    - name: Set permissions on /extdrive for IT group
+      file:
+        path: "{{ mount_point }}"
+        owner: root
+        group: "{{ group_name }}"
+        mode: '0770'
